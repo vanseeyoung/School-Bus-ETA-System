@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <title>관리자 페이지 - 학생 이름 수정</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .bus-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .bus {
+            width: 120px;
+            padding: 15px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .bus:hover {
+            opacity: 0.8;
+        }
+        .student-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .student {
+            width: 100px;
+            padding: 10px;
+            background-color: #FF5722;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .password-button {
+            padding: 10px 20px;
+            margin: 20px 0;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .password-button:hover {
+            background-color: #d32f2f;
+        }
+        .departure-time {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="pageTitle">관리자 페이지 - 학생 이름 수정</h1>
+    <div class="bus-container" id="busContainer"></div>
+
+    <!-- 비밀번호 변경 버튼 -->
+    <button class="password-button" onclick="changePassword()">비밀번호 변경</button>
+
+    <!-- 출결 기록 표를 표시할 공간 -->
+    <div id="attendanceRecordContainer"></div>
+
+    <script>
+        // 비밀번호 초기화 (기본값 설정)
+        if (!localStorage.getItem('adminPassword')) {
+            localStorage.setItem('adminPassword', '1234'); // 기본 비밀번호
+        }
+        let adminPassword = localStorage.getItem('adminPassword'); // 비밀번호 가져오기
+
+        // 페이지 로드 시 비밀번호 확인
+        document.addEventListener('DOMContentLoaded', () => {
+            const enteredPassword = prompt('관리자 비밀번호를 입력하세요:');
+            if (enteredPassword !== adminPassword) {
+                alert('비밀번호가 틀렸습니다. 접근이 제한됩니다.');
+                document.body.innerHTML = '<h1>접근이 제한되었습니다.</h1>'; // 접근 차단
+            }
+        });
+
+        // 비밀번호 변경 함수
+        function changePassword() {
+            const currentPassword = prompt('현재 비밀번호를 입력하세요:');
+            if (currentPassword === adminPassword) {
+                const newPassword = prompt('새 비밀번호를 입력하세요:');
+                if (newPassword) {
+                    adminPassword = newPassword;
+                    localStorage.setItem('adminPassword', newPassword); // 새 비밀번호 저장
+                    alert('비밀번호가 변경되었습니다.');
+                }
+            } else {
+                alert('현재 비밀번호가 틀렸습니다.');
+            }
+        }
+
+        // 기타 기존 코드 유지...
+        const translations = {
+            ko: {
+                pageTitle: "관리자 페이지 - 학생 이름 수정",
+                busText: (busNumber, checkedCount) => `${busNumber}호차 (${checkedCount}명 체크됨)`,
+                studentListTitle: (busNumber) => `${busNumber}호차 - 학생 목록`
+            },
+            vi: {
+                pageTitle: "Trang quản trị - Chỉnh sửa tên học sinh",
+                busText: (busNumber, checkedCount) => `Xe số ${busNumber} (${checkedCount} người đã chọn)`,
+                studentListTitle: (busNumber) => `Xe số ${busNumber} - Danh sách học sinh`
+            },
+            en: {
+                pageTitle: "Admin Page - Edit Student Names",
+                busText: (busNumber, checkedCount) => `Bus ${busNumber} (${checkedCount} checked)`,
+                studentListTitle: (busNumber) => `Bus ${busNumber} - Student List`
+            }
+        };
+
+        let currentLanguage = localStorage.getItem('language') || 'ko'; // 기본 언어는 한국어
+
+        // 언어 설정 함수
+        function setLanguage(language) {
+            currentLanguage = language;
+            localStorage.setItem('language', language); // 선택된 언어를 localStorage에 저장
+
+            // 페이지 텍스트 업데이트
+            document.getElementById('pageTitle').textContent = translations[language].pageTitle;
+
+            // 버스 목록 텍스트 업데이트
+            const buses = document.querySelectorAll('.bus');
+            buses.forEach((bus, index) => {
+                const busNumber = schoolBusNumbers[index];
+                const checkedCount = getCheckedCount(busNumber);
+                bus.textContent = translations[language].busText(busNumber, checkedCount);
+            });
+        }
+
+        // 페이지 로드 시 언어 설정
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLanguage); // 저장된 언어로 설정
+        });
+
+        // 체크된 학생 수 계산
+        function getCheckedCount(busNumber) {
+            let checkedCount = 0;
+            for (let j = 1; j <= 15; j++) {
+                const studentKey = `${busNumber}-학생${j}`;
+                if (localStorage.getItem(studentKey + '-checked') === 'checked') {
+                    checkedCount++;
+                }
+            }
+            return checkedCount;
+        }
+
+        const busContainer = document.getElementById('busContainer');
+
+        // 학교 버스 호차 목록
+        const schoolBusNumbers = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 16, 17, 22, 24, 25, 27, 30, 36, 38, 39, 41];
+
+        // 버스 목록 생성
+        schoolBusNumbers.forEach(busNumber => {
+            const bus = document.createElement('div');
+            bus.className = 'bus';
+            bus.id = `bus-${busNumber}`; // 고유 ID 추가
+            bus.textContent = `${busNumber}호차`;
+
+            // 클릭 시 출발 시간 및 학생 목록 표시
+            bus.onclick = () => {
+                showStudentList(busNumber);
+            };
+
+            busContainer.appendChild(bus);
+        });
+
+        // 학생 목록 표시 함수
+        function showStudentList(busNumber) {
+            const attendanceRecordContainer = document.getElementById('attendanceRecordContainer');
+            attendanceRecordContainer.innerHTML = `
+                <h2>${translations[currentLanguage].studentListTitle(busNumber)}</h2>
+                <div class="student-container" id="studentContainer"></div>
+            `;
+
+            const studentContainer = document.getElementById('studentContainer');
+
+            // 학생 목록 생성
+            for (let j = 1; j <= 15; j++) {
+                const student = document.createElement('div');
+                student.className = 'student';
+
+                const studentKey = `${busNumber}-학생${j}`;
+                const savedName = localStorage.getItem(studentKey) || '학생' + j;
+                const isChecked = localStorage.getItem(studentKey + '-checked') === 'checked';
+                student.textContent = savedName + (isChecked ? ' ✅' : '');
+
+                student.onclick = async function () {
+                    const newName = prompt('학생 이름을 입력하세요:', savedName);
+                    if (newName) {
+                        this.textContent = newName + (isChecked ? ' ✅' : '');
+                        localStorage.setItem(studentKey, newName); // 수정된 이름 저장
+                    }
+                };
+
+                studentContainer.appendChild(student);
+            }
+
+            // 출발 시간 표시
+            showDepartureTime(busNumber);
+        }
+
+        // 출발 시간 표시 함수
+        function showDepartureTime(busNumber) {
+            const departureTimes = JSON.parse(localStorage.getItem('departureTimes')) || {};
+            const departureTime = departureTimes[busNumber] || '기록 없음';
+
+            // 출발 시간 표시
+            const attendanceRecordContainer = document.getElementById('attendanceRecordContainer');
+            const timeElement = document.createElement('p');
+            timeElement.className = 'departure-time';
+            timeElement.textContent = `출발 시간: ${departureTime}`;
+
+            // 도착 예정 시간 계산 및 표시
+            const arrivalTimeElement = document.createElement('span');
+            arrivalTimeElement.className = 'arrival-time';
+            if (departureTime !== '기록 없음') {
+                const arrivalTime = calculateArrivalTime(departureTime, busNumber);
+                arrivalTimeElement.textContent = ` | 도착 예정 시간: ${arrivalTime}`;
+
+                // 도착 시간에 도달하면 처리
+                scheduleArrival(busNumber, arrivalTime);
+            } else {
+                arrivalTimeElement.textContent = ` | 도착 예정 시간: 기록 없음`;
+            }
+
+            timeElement.appendChild(arrivalTimeElement);
+            attendanceRecordContainer.appendChild(timeElement);
+        }
+
+        // 도착 예정 시간 계산 함수
+        function calculateArrivalTime(departureTime, busNumber) {
+            const [hours, minutes] = departureTime.split(':').map(Number);
+            let additionalMinutes = 0;
+
+            // 버스 호차별 추가 시간 범위 설정
+            if ([1, 2, 4].includes(busNumber)) {
+                additionalMinutes = getRandomInt(12, 15);
+            } else if (busNumber === 5) {
+                additionalMinutes = getRandomInt(14, 17);
+            } else if ([6, 9].includes(busNumber)) {
+                additionalMinutes = getRandomInt(10, 13);
+            } else if ([7, 22].includes(busNumber)) {
+                additionalMinutes = getRandomInt(7, 10);
+            } else if ([8, 24, 27].includes(busNumber)) {
+                additionalMinutes = getRandomInt(11, 14);
+            } else if ([10, 11].includes(busNumber)) {
+                additionalMinutes = getRandomInt(9, 12);
+            } else if ([14, 16, 17, 36, 38, 39, 41].includes(busNumber)) {
+                additionalMinutes = getRandomInt(30, 40);
+            } else if (busNumber === 25) {
+                additionalMinutes = getRandomInt(2, 5);
+            } else if (busNumber === 30) {
+                additionalMinutes = getRandomInt(13, 16);
+            }
+
+            // 도착 시간 계산
+            const totalMinutes = hours * 60 + minutes + additionalMinutes;
+            const arrivalHours = Math.floor(totalMinutes / 60) % 24; // 24시간 형식
+            const arrivalMinutes = totalMinutes % 60;
+
+            // 두 자리 숫자로 포맷팅
+            return `${String(arrivalHours).padStart(2, '0')}:${String(arrivalMinutes).padStart(2, '0')}`;
+        }
+
+        // 랜덤 정수 생성 함수
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // 도착 시간에 도달하면 처리
+        function scheduleArrival(busNumber, arrivalTime) {
+            const [arrivalHours, arrivalMinutes] = arrivalTime.split(':').map(Number);
+            const now = new Date();
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+
+            // 도착 시간까지 남은 시간 계산 (밀리초 단위)
+            const arrivalDate = new Date();
+            arrivalDate.setHours(arrivalHours, arrivalMinutes, 0, 0);
+            const timeUntilArrival = arrivalDate - now;
+
+            if (timeUntilArrival > 0) {
+                setTimeout(() => {
+                    // "버스가 도착했습니다" 문구 표시
+                    const attendanceRecordContainer = document.getElementById('attendanceRecordContainer');
+                    const arrivalMessage = document.createElement('p');
+                    arrivalMessage.className = 'arrival-message';
+                    arrivalMessage.textContent = `버스가 도착했습니다!`;
+                    attendanceRecordContainer.appendChild(arrivalMessage);
+
+                    // 5분 후 출발 시간과 도착 예정 시간 제거
+                    setTimeout(() => {
+                        arrivalMessage.remove(); // 도착 메시지 제거
+                        clearBusTimes(busNumber); // 출발 시간과 도착 예정 시간 제거
+                    }, 5 * 60 * 1000); // 5분 후 실행
+                }, timeUntilArrival);
+            }
+        }
+
+        // 출발 시간과 도착 예정 시간 제거
+        function clearBusTimes(busNumber) {
+            const attendanceRecordContainer = document.getElementById('attendanceRecordContainer');
+            const timeElement = attendanceRecordContainer.querySelector('.departure-time');
+            if (timeElement) {
+                timeElement.remove(); // 출발 시간과 도착 예정 시간 제거
+            }
+
+            // localStorage에서 출발 시간 제거
+            const departureTimes = JSON.parse(localStorage.getItem('departureTimes')) || {};
+            delete departureTimes[busNumber];
+            localStorage.setItem('departureTimes', JSON.stringify(departureTimes));
+        }
+    </script>
+</body>
+</html>

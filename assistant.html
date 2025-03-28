@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <title>도우미 페이지 - 학생 체크</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .bus-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .bus {
+            width: 120px;
+            padding: 15px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .bus:hover {
+            opacity: 0.8;
+        }
+        .student-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .student {
+            width: 100px;
+            padding: 10px;
+            background-color: #FF5722;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .start-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .start-button:hover {
+            background-color: #45a049;
+        }
+        .password-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .password-button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="pageTitle">도우미 페이지 - 학생 체크</h1>
+    <div class="bus-container" id="busContainer"></div>
+    <h2 id="selectedBusTitle" class="bus-title" style="display: none;"></h2>
+
+    <!-- 비밀번호 변경 버튼 -->
+    <button class="password-button" onclick="changePassword()">비밀번호 변경</button>
+
+    <script>
+        // 번역 데이터
+        const translations = {
+            ko: {
+                pageTitle: "도우미 페이지 - 학생 체크",
+                busText: (busNumber, checkedCount) => `${busNumber}호차 (${checkedCount}명 체크됨)`,
+                studentListTitle: (busNumber) => `${busNumber}호차 - 학생 목록`,
+                startButton: "출발",
+                changePassword: "비밀번호 변경",
+                enterPassword: "도우미 비밀번호를 입력하세요:",
+                wrongPassword: "비밀번호가 틀렸습니다. 접근이 제한됩니다.",
+                accessDenied: "접근이 제한되었습니다.",
+                passwordChanged: "비밀번호가 변경되었습니다.",
+                currentPasswordPrompt: "현재 비밀번호를 입력하세요:",
+                newPasswordPrompt: "새 비밀번호를 입력하세요:"
+            },
+            vi: {
+                pageTitle: "Trang trợ lý - Kiểm tra học sinh",
+                busText: (busNumber, checkedCount) => `Xe số ${busNumber} (${checkedCount} người đã chọn)`,
+                studentListTitle: (busNumber) => `Xe số ${busNumber} - Danh sách học sinh`,
+                startButton: "Khởi hành",
+                changePassword: "Đổi mật khẩu",
+                enterPassword: "Nhập mật khẩu trợ lý:",
+                wrongPassword: "Sai mật khẩu. Truy cập bị từ chối.",
+                accessDenied: "Truy cập bị từ chối.",
+                passwordChanged: "Mật khẩu đã được thay đổi.",
+                currentPasswordPrompt: "Nhập mật khẩu hiện tại:",
+                newPasswordPrompt: "Nhập mật khẩu mới:"
+            },
+            en: {
+                pageTitle: "Assistant Page - Student Check",
+                busText: (busNumber, checkedCount) => `Bus ${busNumber} (${checkedCount} checked)`,
+                studentListTitle: (busNumber) => `Bus ${busNumber} - Student List`,
+                startButton: "Start",
+                changePassword: "Change Password",
+                enterPassword: "Enter the assistant password:",
+                wrongPassword: "Incorrect password. Access denied.",
+                accessDenied: "Access denied.",
+                passwordChanged: "Password has been changed.",
+                currentPasswordPrompt: "Enter the current password:",
+                newPasswordPrompt: "Enter the new password:"
+            }
+        };
+
+        // 메인 페이지에서 선택된 언어 가져오기
+        let currentLanguage = localStorage.getItem('language') || 'ko'; // 기본 언어는 한국어
+        const busContainer = document.getElementById('busContainer');
+        const selectedBusTitle = document.getElementById('selectedBusTitle');
+        let assistantPassword = localStorage.getItem('assistantPassword') || '4567'; // 기본 도우미 비밀번호
+
+        // 페이지 로드 시 비밀번호 확인
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAuthenticated = localStorage.getItem('isAuthenticated'); // 인증 상태 확인
+            if (!isAuthenticated) {
+                const enteredPassword = prompt(translations[currentLanguage].enterPassword);
+                if (enteredPassword !== assistantPassword) {
+                    alert(translations[currentLanguage].wrongPassword);
+                    document.body.innerHTML = `<h1>${translations[currentLanguage].accessDenied}</h1>`; // 접근 차단
+                    return;
+                }
+                localStorage.setItem('isAuthenticated', 'true'); // 인증 상태 저장
+            }
+        });
+
+        // 비밀번호 변경 함수
+        function changePassword() {
+            const currentPassword = prompt(translations[currentLanguage].currentPasswordPrompt);
+            if (currentPassword === assistantPassword) {
+                const newPassword = prompt(translations[currentLanguage].newPasswordPrompt);
+                if (newPassword) {
+                    assistantPassword = newPassword;
+                    localStorage.setItem('assistantPassword', newPassword); // 도우미 비밀번호 저장
+                    alert(translations[currentLanguage].passwordChanged);
+                }
+            } else {
+                alert(translations[currentLanguage].wrongPassword);
+            }
+        }
+
+        // 언어 설정 함수
+        function applyLanguage() {
+            // 페이지 텍스트 업데이트
+            document.getElementById('pageTitle').textContent = translations[currentLanguage].pageTitle;
+            document.querySelector('.password-button').textContent = translations[currentLanguage].changePassword;
+
+            // 버스 목록 텍스트 업데이트
+            const buses = document.querySelectorAll('.bus');
+            buses.forEach((bus, index) => {
+                const busNumber = schoolBusNumbers[index];
+                const checkedCount = getCheckedCount(busNumber);
+                bus.textContent = translations[currentLanguage].busText(busNumber, checkedCount);
+            });
+        }
+
+        // 체크된 학생 수 계산
+        function getCheckedCount(busNumber) {
+            let checkedCount = 0;
+            for (let j = 1; j <= 15; j++) {
+                const studentKey = `${busNumber}-학생${j}`;
+                if (localStorage.getItem(studentKey + '-checked') === 'checked') {
+                    checkedCount++;
+                }
+            }
+            return checkedCount;
+        }
+
+        // 버스 목록 생성
+        const schoolBusNumbers = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 16, 17, 22, 24, 25, 27, 30, 36, 38, 39, 41];
+        schoolBusNumbers.forEach(busNumber => {
+            const bus = document.createElement('div');
+            bus.className = 'bus';
+
+            // 체크된 학생 수 계산
+            const checkedCount = getCheckedCount(busNumber);
+            bus.textContent = translations[currentLanguage].busText(busNumber, checkedCount);
+
+            bus.onclick = () => openStudentPage(busNumber);
+            busContainer.appendChild(bus);
+        });
+
+        // 학생 목록 페이지 열기
+        function openStudentPage(busNumber) {
+            const studentContainer = document.querySelector('.student-container');
+            if (studentContainer) studentContainer.remove();
+
+            const container = document.createElement('div');
+            container.className = 'student-container';
+
+            // 선택된 호차 제목 표시
+            selectedBusTitle.style.display = 'block';
+            selectedBusTitle.textContent = translations[currentLanguage].studentListTitle(busNumber);
+
+            for (let j = 1; j <= 15; j++) {
+                const student = document.createElement('div');
+                student.className = 'student';
+
+                const studentKey = `${busNumber}-학생${j}`;
+                const savedName = localStorage.getItem(studentKey) || `학생${j}`;
+                const isChecked = localStorage.getItem(studentKey + '-checked') === 'checked';
+
+                // 모든 언어에서 학생 이름과 체크 여부 표시
+                student.textContent = savedName + (isChecked ? ' ✅' : '');
+
+                student.onclick = function () {
+                    if (this.textContent.includes('✅')) {
+                        this.textContent = this.textContent.replace(' ✅', '');
+                        localStorage.removeItem(studentKey + '-checked'); // 체크 해제 시 삭제
+                    } else {
+                        this.textContent += ' ✅';
+                        localStorage.setItem(studentKey + '-checked', 'checked'); // 체크 시 저장
+                    }
+                };
+
+                container.appendChild(student);
+            }
+
+            const startButton = document.createElement('button');
+            startButton.className = 'start-button';
+            startButton.textContent = translations[currentLanguage].startButton;
+            startButton.onclick = () => saveAttendance(busNumber);
+
+            container.appendChild(startButton);
+            document.body.appendChild(container);
+        }
+
+        // 출석 데이터 저장 및 출발 시간 기록
+        function saveAttendance(busNumber) {
+            const today = new Date();
+            const dateKey = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            const timeKey = `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+            const attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || {};
+            const departureTimes = JSON.parse(localStorage.getItem('departureTimes')) || {};
+
+            for (let j = 1; j <= 15; j++) {
+                const studentKey = `${busNumber}-학생${j}`;
+                const isChecked = localStorage.getItem(studentKey + '-checked') === 'checked';
+                if (!attendanceData[studentKey]) {
+                    attendanceData[studentKey] = {};
+                }
+                attendanceData[studentKey][dateKey] = isChecked;
+            }
+
+            // 출발 시간 기록
+            departureTimes[busNumber] = timeKey;
+            localStorage.setItem('departureTimes', JSON.stringify(departureTimes));
+
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            alert(`${busNumber}호차 출석 데이터와 출발 시간이 저장되었습니다!`);
+        }
+
+        // 페이지 로드 시 언어 설정
+        applyLanguage();
+    </script>
+</body>
+</html>

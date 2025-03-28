@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 통계</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .calendar {
+            display: inline-block;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .calendar-header button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .calendar-header button:hover {
+            background-color: #45a049;
+        }
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .day {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .day.today {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .attendance-table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .attendance-table th, .attendance-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .attendance-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .bus-section {
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .bus-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="pageTitle">학생 통계</h1>
+    <div class="calendar">
+        <div class="calendar-header">
+            <button onclick="prevMonth()" id="prevButton">이전</button>
+            <h2 id="monthYear"></h2>
+            <button onclick="nextMonth()" id="nextButton">다음</button>
+        </div>
+        <div class="days" id="daysContainer"></div>
+    </div>
+
+    <h2 id="selectedDateTitle"></h2>
+    <div id="busSections"></div>
+    <div id="studentDetails" style="display: none;"></div>
+
+    <script>
+        // 번역 데이터
+        const translations = {
+            ko: {
+                pageTitle: "학생 통계",
+                prevButton: "이전",
+                nextButton: "다음",
+                selectedDateTitle: (year, month, day) => `${year}년 ${month}월 ${day}일 출석 기록`,
+                busTitle: (busNumber) => `${busNumber}호차`,
+                studentListTitle: (busNumber) => `${busNumber}호차 - 학생 목록`,
+                studentName: "학생 이름",
+                busStatus: "버스 탑승 여부",
+                boarded: "탑승",
+                notBoarded: "미탑승",
+                departureTime: "출발 시간",
+                notDeparted: "출발 기록 없음"
+            },
+            vi: {
+                pageTitle: "Thống kê học sinh",
+                prevButton: "Trước",
+                nextButton: "Tiếp theo",
+                selectedDateTitle: (year, month, day) => `Bản ghi điểm danh ngày ${day}/${month}/${year}`,
+                busTitle: (busNumber) => `Xe số ${busNumber}`,
+                studentListTitle: (busNumber) => `Xe số ${busNumber} - Danh sách học sinh`,
+                studentName: "Tên học sinh",
+                busStatus: "Trạng thái xe buýt",
+                boarded: "Đã lên xe",
+                notBoarded: "Chưa lên xe",
+                departureTime: "Thời gian khởi hành",
+                notDeparted: "Chưa có bản ghi khởi hành"
+            }
+        };
+
+        // 메인 페이지에서 선택된 언어 가져오기
+        const currentLanguage = localStorage.getItem('language') || 'ko'; // 기본 언어는 한국어
+
+        const daysContainer = document.getElementById('daysContainer');
+        const monthYear = document.getElementById('monthYear');
+        const selectedDateTitle = document.getElementById('selectedDateTitle');
+        const busSections = document.getElementById('busSections');
+        const studentDetails = document.getElementById('studentDetails');
+        const today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+
+        // 호차 및 학생 데이터
+        const busNumbers = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 16, 17, 22, 24, 25, 27, 30, 36, 38, 39, 41];
+        const buses = busNumbers.map(busNumber => ({
+            busNumber,
+            students: Array.from({ length: 15 }, (_, i) => ({
+                id: `${busNumber}-학생${i + 1}`,
+                name: `학생${i + 1}`
+            }))
+        }));
+
+        function renderCalendar(month, year) {
+            daysContainer.innerHTML = '';
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            monthYear.textContent = `${year}년 ${month + 1}월`;
+
+            // 빈 칸 추가
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDiv = document.createElement('div');
+                daysContainer.appendChild(emptyDiv);
+            }
+
+            // 날짜 추가
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayDiv.classList.add('today');
+                }
+                dayDiv.textContent = day;
+                dayDiv.onclick = () => showAttendance(year, month, day);
+                daysContainer.appendChild(dayDiv);
+            }
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentMonth, currentYear);
+        }
+
+        function showAttendance(year, month, day) {
+            const dateKey = `${year}-${month + 1}-${day}`;
+            const attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || {};
+            const departureTimes = JSON.parse(localStorage.getItem('departureTimes')) || {}; // 출발 시간 데이터 추가
+
+            selectedDateTitle.textContent = translations[currentLanguage].selectedDateTitle(year, month + 1, day);
+            busSections.innerHTML = '';
+            studentDetails.style.display = 'none';
+
+            buses.forEach(bus => {
+                const busSection = document.createElement('div');
+                busSection.className = 'bus-section';
+
+                const busTitle = document.createElement('h3');
+                busTitle.className = 'bus-title';
+                busTitle.textContent = translations[currentLanguage].busTitle(bus.busNumber);
+                busSection.appendChild(busTitle);
+
+                // 출발 시간 표시
+                const departureTime = departureTimes[bus.busNumber] || translations[currentLanguage].notDeparted;
+                const departureTimeElement = document.createElement('p');
+                departureTimeElement.textContent = `${translations[currentLanguage].departureTime}: ${departureTime}`;
+                busSection.appendChild(departureTimeElement);
+
+                busSection.onclick = () => showBusDetails(bus, dateKey, attendanceData);
+
+                busSections.appendChild(busSection);
+            });
+        }
+
+        function showBusDetails(bus, dateKey, attendanceData) {
+            studentDetails.style.display = 'block';
+            studentDetails.innerHTML = `<h3>${translations[currentLanguage].studentListTitle(bus.busNumber)}</h3>`;
+
+            const table = document.createElement('table');
+            table.className = 'attendance-table';
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>${translations[currentLanguage].studentName}</th>
+                    <th>${translations[currentLanguage].busStatus}</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            bus.students.forEach(student => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                const tdStatus = document.createElement('td');
+
+                // 학생 이름을 localStorage에서 가져옴
+                const savedName = localStorage.getItem(student.id) || student.name;
+                tdName.textContent = savedName;
+
+                // 탑승 여부 표시
+                tdStatus.textContent = attendanceData[student.id]?.[dateKey]
+                    ? translations[currentLanguage].boarded
+                    : translations[currentLanguage].notBoarded;
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdStatus);
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            studentDetails.appendChild(table);
+        }
+
+        // 페이지 로드 시 언어 설정
+        document.getElementById('pageTitle').textContent = translations[currentLanguage].pageTitle;
+        document.getElementById('prevButton').textContent = translations[currentLanguage].prevButton;
+        document.getElementById('nextButton').textContent = translations[currentLanguage].nextButton;
+
+        renderCalendar(currentMonth, currentYear);
+    </script>
+</body>
+</html>

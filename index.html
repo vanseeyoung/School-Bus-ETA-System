@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <title>School Bus ETA system</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #a6a9ae;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            color: #fffb00;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .admin-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .assistant-btn {
+            background-color: #FFC107;
+            color: white;
+        }
+        .record-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .language-buttons {
+            margin-bottom: 20px;
+        }
+        .language-button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background-color: #4000ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .language-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 언어 전환 버튼 -->
+        <div class="language-buttons">
+            <button class="language-button" onclick="setLanguage('ko')">한국어</button>
+            <button class="language-button" onclick="setLanguage('vi')">Tiếng Việt</button>
+        </div>
+
+        <!-- 메인 콘텐츠 -->
+        <h1 id="pageTitle">누가 사용하고 계신가요?</h1>
+        <button class="btn admin-btn" id="adminButton" onclick="navigateTo('admin.html')">관리자</button>
+        <button class="btn assistant-btn" id="assistantButton" onclick="navigateTo('assistant.html')">도우미</button>
+        <button class="btn record-btn" id="recordButton" onclick="navigateTo('record.html')">통계</button>
+    </div>
+
+    <script>
+        // 번역 데이터
+        const translations = {
+            ko: {
+                pageTitle: "누가 사용하고 계신가요?",
+                adminButton: "관리자",
+                assistantButton: "도우미",
+                recordButton: "통계"
+            },
+            vi: {
+                pageTitle: "Bạn đang sử dụng hệ thống?",
+                adminButton: "Quản trị viên",
+                assistantButton: "Trợ lý",
+                recordButton: "Thống kê"
+            }
+        };
+
+        let currentLanguage = localStorage.getItem('language') || 'ko'; // 기본 언어는 한국어
+
+        // 언어 설정 함수
+        function setLanguage(language) {
+            currentLanguage = language;
+            localStorage.setItem('language', language); // 선택된 언어를 localStorage에 저장
+
+            // 텍스트 업데이트
+            document.getElementById('pageTitle').textContent = translations[language].pageTitle;
+            document.getElementById('adminButton').textContent = translations[language].adminButton;
+            document.getElementById('assistantButton').textContent = translations[language].assistantButton;
+            document.getElementById('recordButton').textContent = translations[language].recordButton;
+        }
+
+        // 페이지 로드 시 언어 설정
+        setLanguage(currentLanguage);
+
+        // 페이지 이동 함수
+        function navigateTo(page) {
+            const adminPassword = localStorage.getItem('adminPassword') || '1234';
+            const assistantPassword = localStorage.getItem('assistantPassword') || '4567';
+            if (page === 'admin.html') {
+                const password = prompt(translations[currentLanguage].adminButton + " 비밀번호를 입력하세요:");
+                if (password !== adminPassword) {
+                    alert('비밀번호가 틀렸습니다.');
+                    return;
+                }
+            } else if (page === 'assistant.html') {
+                const password = prompt(translations[currentLanguage].assistantButton + " 비밀번호를 입력하세요:");
+                if (password !== assistantPassword) {
+                    alert('비밀번호가 틀렸습니다.');
+                    return;
+                }
+            }
+            location.href = page;
+        }
+    </script>
+</body>
+</html>
